@@ -180,7 +180,50 @@ class DouYinVideo(object):
         await self.set_thumbnail(page, self.thumbnail_path)
 
         # 更换可见元素
-        await self.set_location(page, "杭州市")
+        # await self.set_location(page, "杭州市")
+        douyin_logger.info(f'总共添加{len(self.tags)}个话题')
+
+        # 自动点击“添加声明”
+        try:
+            declaration_btn = page.locator('p:has-text("添加声明")')
+            if await declaration_btn.count():
+                await declaration_btn.click()
+                douyin_logger.info("已点击添加声明按钮")
+                # 等待声明弹窗出现
+                await page.wait_for_selector('span:has-text("内容取材网络")', timeout=5000)
+                # 点击“内容取材网络”对应的 radio
+                radio_label = page.locator('label.semi-radio:has-text("内容取材网络")')
+                radio_input = radio_label.locator('input[type="radio"]')
+                if await radio_input.count():
+                    await radio_input.click()
+                    douyin_logger.info("已选择内容取材网络声明")
+                    # 继续选择“取材站外”
+                    await page.wait_for_selector('span:has-text("取材站外")', timeout=3000)
+                    outside_radio_span = page.locator('span:has-text("取材站外")')
+                    if await outside_radio_span.count():
+                        outside_label = page.locator('label.semi-radio:has-text("取材站外")')
+                        outside_input = outside_label.locator('input[type="radio"]')
+                        if await outside_input.count():
+                            await outside_input.click()
+                            douyin_logger.info("已选择取材站外声明")
+                            # 点击弹窗“确定”按钮
+                            confirm_btn = page.locator('button:has-text("确定")')
+                            if await confirm_btn.count():
+                                await confirm_btn.click()
+                                douyin_logger.info("已点击声明弹窗确定按钮")
+                            else:
+                                douyin_logger.warning("未找到声明弹窗确定按钮")
+                        else:
+                            douyin_logger.warning("未找到取材站外的radio input")
+                    else:
+                        douyin_logger.warning("未找到取材站外声明选项")
+                else:
+                    douyin_logger.warning("未找到内容取材网络的radio input")
+            else:
+                douyin_logger.warning("未找到添加声明按钮")
+        except Exception as e:
+            douyin_logger.warning(f"点击添加声明或选择声明失败: {e}")
+
 
         # 頭條/西瓜
         third_part_element = '[class^="info"] > [class^="first-part"] div div.semi-switch'
@@ -213,8 +256,8 @@ class DouYinVideo(object):
         douyin_logger.success('  [-]cookie更新完毕！')
         await asyncio.sleep(2)  # 这里延迟是为了方便眼睛直观的观看
         # 关闭浏览器上下文和浏览器实例
-        await context.close()
-        await browser.close()
+        #await context.close()
+        #await browser.close()
     
     async def set_thumbnail(self, page: Page, thumbnail_path: str):
         if thumbnail_path:
